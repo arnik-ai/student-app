@@ -138,7 +138,7 @@ if choice == "📋 Form":
                     show_table(pd.DataFrame([new_row]), height=200)
 
                     # 🚀 ریست فرم بعد از ثبت موفق
-                    st.experimental_rerun()
+                    st.rerun()
 
     st.subheader("📊 لیست دانش‌آموزان")
     show_table(students_df, height=table_height)
