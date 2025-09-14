@@ -137,6 +137,9 @@ if choice == "📋 Form":
                     st.subheader("رکورد جدید:")
                     show_table(pd.DataFrame([new_row]), height=200)
 
+                    # 🚀 ریست فرم بعد از ثبت موفق
+                    st.experimental_rerun()
+
     st.subheader("📊 لیست دانش‌آموزان")
     show_table(students_df, height=table_height)
 
@@ -209,4 +212,3 @@ elif choice == "📷 Gallery":
         for i, p in enumerate(saved):
             with cols2[i % 4]:
                 st.image(p, use_column_width=True)
-
