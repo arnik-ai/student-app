@@ -81,7 +81,7 @@ students_df = load_df()
 # ---------- Sidebar ----------
 st.sidebar.title("منوی اصلی")
 table_height = st.sidebar.slider("ارتفاع جدول", 200, 800, 380, step=20)
-choice = st.sidebar.radio("بخش را انتخاب کنید:", ["📋 Form", "📊 CSV Uploader", "📷 Gallery"])
+choice = st.sidebar.radio("menu:", ["📋 Form", "📊 CSV Uploader", "📷 Gallery"])
 
 # =========================================================
 # 📋 Form
@@ -202,3 +202,4 @@ elif choice == "📷 Gallery":
         for i, p in enumerate(saved):
             with cols2[i % 4]:
                 st.image(p, use_column_width=True)
+
