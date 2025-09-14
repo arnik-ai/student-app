@@ -53,7 +53,6 @@ def save_uploaded_file(uploaded_file, folder=UPLOAD_DIR) -> str:
     return path
 
 def show_table(df: pd.DataFrame, height=400):
-    """جدول ساده با قابلیت سرچ و سورت داخلی"""
     if df.empty:
         st.info("هیچ داده‌ای برای نمایش وجود ندارد.")
         return
@@ -81,7 +80,7 @@ students_df = load_df()
 # ---------- Sidebar ----------
 st.sidebar.title("منوی اصلی")
 table_height = st.sidebar.slider("ارتفاع جدول", 200, 800, 380, step=20)
-choice = st.sidebar.radio("menu:", ["📋 Form", "📊 CSV Uploader", "📷 Gallery"])
+choice = st.sidebar.radio("بخش را انتخاب کنید:", ["📋 Form", "📊 CSV Uploader", "📷 Gallery"])
 
 # =========================================================
 # 📋 Form
@@ -111,26 +110,32 @@ if choice == "📋 Form":
                 st.error("⚠️ لطفاً نام و نام خانوادگی را وارد کنید")
             elif not accept:
                 st.error("⚠️ برای ادامه باید گزینه I accept را تیک بزنید")
+            elif not email:
+                st.error("⚠️ لطفاً ایمیل یا شماره تماس را وارد کنید")
             else:
-                photo_path = save_uploaded_file(photo) if photo else ""
-                new_row = {
-                    "نام": first_name,
-                    "نام خانوادگی": last_name,
-                    "سن": int(age),
-                    "کلاس": grade,
-                    "ایمیل": email,
-                    "جنسیت": gender,
-                    "بازخورد": feedback,
-                    "زمان ثبت": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    "عکس": photo_path,
-                    "قبول قوانین": True
-                }
-                students_df = pd.concat([students_df, pd.DataFrame([new_row])], ignore_index=True)
-                save_df(students_df)
-                st.success("✅ اطلاعات با موفقیت ثبت شد")
+                # جلوگیری از رکورد تکراری (بر اساس ایمیل)
+                if not students_df[students_df["ایمیل"] == email].empty:
+                    st.warning("⚠️ این ایمیل قبلاً ثبت شده است.")
+                else:
+                    photo_path = save_uploaded_file(photo) if photo else ""
+                    new_row = {
+                        "نام": first_name,
+                        "نام خانوادگی": last_name,
+                        "سن": int(age),
+                        "کلاس": grade,
+                        "ایمیل": email,
+                        "جنسیت": gender,
+                        "بازخورد": feedback,
+                        "زمان ثبت": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "عکس": photo_path,
+                        "قبول قوانین": True
+                    }
+                    students_df = pd.concat([students_df, pd.DataFrame([new_row])], ignore_index=True)
+                    save_df(students_df)
+                    st.success("✅ اطلاعات با موفقیت ثبت شد")
 
-                st.subheader("رکورد جدید:")
-                show_table(pd.DataFrame([new_row]), height=200)
+                    st.subheader("رکورد جدید:")
+                    show_table(pd.DataFrame([new_row]), height=200)
 
     st.subheader("📊 لیست دانش‌آموزان")
     show_table(students_df, height=table_height)
@@ -160,8 +165,10 @@ elif choice == "📊 CSV Uploader":
             students_df = df_new.copy()
             action_msg = "جایگزینی کامل انجام شد."
         else:
-            students_df = pd.concat([students_df, df_new], ignore_index=True)
-            action_msg = f"افزودن {len(df_new)} ردیف انجام شد."
+            # حذف رکوردهای تکراری بر اساس ایمیل
+            combined = pd.concat([students_df, df_new], ignore_index=True)
+            students_df = combined.drop_duplicates(subset=["ایمیل"])
+            action_msg = f"افزودن {len(df_new)} ردیف انجام شد (تکراری‌ها حذف شدند)."
 
         save_df(students_df)
         st.success(f"✅ {action_msg} (کل ردیف‌ها: {len(students_df)})")
@@ -202,4 +209,3 @@ elif choice == "📷 Gallery":
         for i, p in enumerate(saved):
             with cols2[i % 4]:
                 st.image(p, use_column_width=True)
-
