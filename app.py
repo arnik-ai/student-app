@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import os, uuid
 from datetime import datetime
-from st_aggrid import AgGrid, GridOptionsBuilder
 
 # ---------- تنظیمات صفحه ----------
 st.set_page_config(page_title="ثبت‌نام دانش‌آموزان", layout="wide")
@@ -53,52 +52,28 @@ def save_uploaded_file(uploaded_file, folder=UPLOAD_DIR) -> str:
         f.write(uploaded_file.read())
     return path
 
-def show_aggrid(df: pd.DataFrame, height=400):
-    """جدول تعاملی با سرچ کلی + باکس سورت"""
+def show_table(df: pd.DataFrame, height=400):
+    """جدول ساده با قابلیت سرچ و سورت داخلی"""
     if df.empty:
         st.info("هیچ داده‌ای برای نمایش وجود ندارد.")
         return
 
-    # 🔍 جعبه سرچ کلی
     search_query = st.text_input("🔍 جستجو در کل جدول")
-
     filtered_df = df.copy()
     if search_query:
         filtered_df = df[df.apply(
             lambda row: row.astype(str).str.contains(search_query, case=False).any(), axis=1
         )]
 
-    # 📦 انتخاب ستون برای مرتب‌سازی
-    col1, col2 = st.columns([2,1])
-    with col1:
-        sort_col = st.selectbox("📦 مرتب‌سازی بر اساس ستون", df.columns)
-    with col2:
-        sort_order = st.radio("ترتیب", ["صعودی", "نزولی"], horizontal=True)
+    sort_col = st.selectbox("📦 مرتب‌سازی بر اساس ستون", filtered_df.columns)
+    sort_order = st.radio("ترتیب", ["صعودی", "نزولی"], horizontal=True)
 
     sorted_df = filtered_df.sort_values(
         by=sort_col,
         ascending=True if sort_order == "صعودی" else False
     )
 
-    # نمایش جدول در AgGrid
-    gb = GridOptionsBuilder.from_dataframe(sorted_df)
-    gb.configure_pagination(paginationAutoPageSize=True)
-    gb.configure_side_bar(False)  
-    gb.configure_default_column(
-        sortable=True,   
-        filter=False,    
-        resizable=True
-    )
-
-    grid_options = gb.build()
-    AgGrid(
-        sorted_df,
-        gridOptions=grid_options,
-        enable_enterprise_modules=True,
-        theme="alpine",
-        height=height,
-        fit_columns_on_grid_load=True
-    )
+    st.data_editor(sorted_df, use_container_width=True, height=height)
 
 # ---------- داده اولیه ----------
 students_df = load_df()
@@ -106,13 +81,13 @@ students_df = load_df()
 # ---------- Sidebar ----------
 st.sidebar.title("منوی اصلی")
 table_height = st.sidebar.slider("ارتفاع جدول", 200, 800, 380, step=20)
-choice = st.sidebar.radio("menu", ["📋 Form", "📊 CSV Uploader", "📷 Gallery"])
+choice = st.sidebar.radio("بخش را انتخاب کنید:", ["📋 Form", "📊 CSV Uploader", "📷 Gallery"])
 
 # =========================================================
 # 📋 Form
 # =========================================================
 if choice == "📋 Form":
-    st.title("📋 فرم ثبت‌ نام دانش‌آموزان")
+    st.title("📋 فرم ثبت‌نام دانش‌آموزان")
 
     with st.form("student_form", clear_on_submit=False):
         col1, col2 = st.columns(2)
@@ -155,10 +130,10 @@ if choice == "📋 Form":
                 st.success("✅ اطلاعات با موفقیت ثبت شد")
 
                 st.subheader("رکورد جدید:")
-                show_aggrid(pd.DataFrame([new_row]), height=200)
+                show_table(pd.DataFrame([new_row]), height=200)
 
     st.subheader("📊 لیست دانش‌آموزان")
-    show_aggrid(students_df, height=table_height)
+    show_table(students_df, height=table_height)
 
 # =========================================================
 # 📊 CSV Uploader
@@ -190,7 +165,7 @@ elif choice == "📊 CSV Uploader":
 
         save_df(students_df)
         st.success(f"✅ {action_msg} (کل ردیف‌ها: {len(students_df)})")
-        show_aggrid(students_df, height=table_height)
+        show_table(students_df, height=table_height)
 
 # =========================================================
 # 📷 Gallery
